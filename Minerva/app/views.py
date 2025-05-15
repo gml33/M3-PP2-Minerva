@@ -54,6 +54,10 @@ from .serializers import (
     LinkRelevanteCreateSerializer
 )
 
+from django.views.decorators.csrf import csrf_exempt
+import json
+from django.http import JsonResponse
+
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -61,15 +65,25 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             log_actividad(request, TipoActividad.LOGIN, "Inicio de sesión exitoso")
-            return redirect('prensa')  # o a donde quieras redirigir luego del login
+            rol = getattr(user.userprofile, 'rol', None)
+            if rol == Roles.PRENSA:
+                return redirect('prensa')
+            elif rol == Roles.CLASIFICACION:
+                return redirect('clasificacion')
+            elif rol == Roles.REDACCION:
+                return redirect('redaccion')
+            elif rol == Roles.ADMIN:
+                return redirect('actividad')
+            else:
+                return render(request, '403.html', status=403)
     else:
         form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
 
 
 def logout_view(request):
-    logout(request)
     log_actividad(request, TipoActividad.LOGOUT, "Cierre de sesión exitoso")
+    logout(request)    
     return redirect('login')
 
 
@@ -87,13 +101,12 @@ def actividad_debug_view(request):
 
 #----------------------------------------------------------------------------
 
-
 @login_required
 def clasificacion_view(request):
     user_profile = getattr(request.user, 'userprofile', None)
-    if user_profile and user_profile.rol in [Roles.PRENSA, Roles.ADMIN]:
+    if user_profile and user_profile.rol in [Roles.CLASIFICACION, Roles.ADMIN]:
         return render(request, 'clasificacion.html')
-    return render(request, '403.html', status=403)
+    return render(request, '403.html', status=403)  # O redirigí a login o inicio
 
 #-----------------------------------------------------------------------------
 
@@ -218,7 +231,19 @@ def exportar_actividades_pdf(request):
     p.save()
     return response
 
+#---------------------------------------------------------------------------------
 
+@csrf_exempt
+def registrar_clic_link(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            url = data.get('url', 'URL desconocida')
+            log_actividad(request, TipoActividad.CLIC_LINK, f"Click en link: {url}")
+            return JsonResponse({'status': 'ok'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'mensaje': str(e)}, status=400)
+    return JsonResponse({'status': 'método no permitido'}, status=405)
 
 
 

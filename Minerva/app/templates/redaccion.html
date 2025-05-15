@@ -75,16 +75,16 @@
         const filtroFechaFin = document.getElementById("filtroFechaFin");
 
         async function cargarCategorias() {
-    const res = await fetch("http://127.0.0.1:8000/api/categorias/");
-    const data = await res.json();
+            const res = await fetch("http://127.0.0.1:8000/api/categorias/");
+            const data = await res.json();
 
-    data.forEach(cat => {
-        const option = document.createElement("option");
-        option.value = cat.nombre;
-        option.textContent = cat.nombre.charAt(0).toUpperCase() + cat.nombre.slice(1);
-        filtroCategoria.appendChild(option);
-    });
-}
+            data.forEach(cat => {
+                const option = document.createElement("option");
+                option.value = cat.nombre;
+                option.textContent = cat.nombre.charAt(0).toUpperCase() + cat.nombre.slice(1);
+                filtroCategoria.appendChild(option);
+            });
+        }
 
 
         filtroForm.addEventListener("submit", e => {
@@ -144,11 +144,13 @@
                 card.className = "col-12";
 
                 const lista = links.map(link => `
-            <li>
-                <a href="${link.url}" target="_blank">${link.url}</a>
-                <small class="text-muted">(${new Date(link.fecha_carga).toLocaleDateString()})</small>
-            </li>
-        `).join("");
+                <li>
+                    <a href="${link.url}" target="_blank" class="link-clic" data-url="${link.url}">
+                        ${link.url}
+                    </a>
+                    <small class="text-muted">(${new Date(link.fecha_carga).toLocaleDateString()})</small>
+                </li>`)
+                .join("");
 
                 card.innerHTML = `
             <div class="card">
@@ -161,6 +163,24 @@
 
                 contenedor.appendChild(card);
             }
+
+            setTimeout(() => {
+    document.querySelectorAll(".link-clic").forEach(enlace => {
+        enlace.addEventListener("click", e => {
+            const url = e.currentTarget.dataset.url;
+
+            fetch("http://127.0.0.1:8000/api/actividad/clic_link/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({ url })
+            });
+        });
+    });
+}, 100);  // Espera para asegurar que los <a> existan en el DOM
+
         }
 
         // Enviar formulario de redacción

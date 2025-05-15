@@ -1,40 +1,3 @@
-{% extends 'base.html' %}
-{% block title %}Panel de Clasificación{% endblock %}
-
-{% block content %}
-<h1 class="mb-4">Panel de Clasificación</h1>
-
-<form id="filtro-form" class="row g-3 mb-4">
-    {% csrf_token %}
-    <div class="col-md-4">
-        <label for="fechaInicio" class="form-label">Desde</label>
-        <input type="date" class="form-control" id="fechaInicio">
-    </div>
-    <div class="col-md-4">
-        <label for="fechaFin" class="form-label">Hasta</label>
-        <input type="date" class="form-control" id="fechaFin">
-    </div>
-    <div class="col-md-4 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary">Filtrar</button>
-    </div>
-</form>
-
-<table class="table table-bordered" id="tabla-links">
-    <thead>
-        <tr>
-            <th>URL</th>
-            <th>Fecha de carga</th>
-            <th>Cargado por</th>
-            <th>Estado</th>
-            <th>Acción</th>
-        </tr>
-    </thead>
-    <tbody>
-        <!-- Se llena dinámicamente con JS -->
-    </tbody>
-</table>
-<script>
-
 document.addEventListener("DOMContentLoaded", () => {
     const tablaBody = document.querySelector("#tabla-links tbody");
     const filtroForm = document.getElementById("filtro-form");
@@ -156,7 +119,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
     cargarLinksClasificacion();
 });
-
-</script>
-
-{% endblock %}
