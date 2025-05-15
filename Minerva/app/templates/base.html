@@ -1,0 +1,61 @@
+{% load static %}
+{% csrf_token %}
+<!DOCTYPE html>
+<html lang="es">
+
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}Minerva{% endblock %}</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    </head>
+
+    <body>
+
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Minerva</a>
+
+                {% if user.is_authenticated %}
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        {% if user.userprofile.rol == 'administrador' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'prensa' %}">Prensa</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'clasificacion' %}">Clasificación</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'redaccion' %}">Redacción</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'actividad' %}">Actividades</a>
+                        </li>
+                        <!-- Agregá más secciones si querés -->
+                        {% endif %}
+                    </ul>
+                    <span class="navbar-text text-white me-3">
+                        Usuario: {{ user.username }} ({{ user.userprofile.get_rol_display }})
+                    </span>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-light">Cerrar sesión</a>
+                </div>
+                {% endif %}
+            </div>
+        </nav>
+
+
+        <div class="container">
+            {% block content %}
+            {% endblock %}
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="{% static 'js/app.js' %}"></script>
+    </body>
+
+</html>

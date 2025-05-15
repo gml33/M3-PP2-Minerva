@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Panel de Clasificación{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Panel de Clasificación</h1>
+
+<form id="filtro-form" class="row g-3 mb-4">
+    {% csrf_token %}
+    <div class="col-md-4">
+        <label for="fechaInicio" class="form-label">Desde</label>
+        <input type="date" class="form-control" id="fechaInicio">
+    </div>
+    <div class="col-md-4">
+        <label for="fechaFin" class="form-label">Hasta</label>
+        <input type="date" class="form-control" id="fechaFin">
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+</form>
+
+<table class="table table-bordered" id="tabla-links">
+    <thead>
+        <tr>
+            <th>URL</th>
+            <th>Fecha de carga</th>
+            <th>Cargado por</th>
+            <th>Estado</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Se llena dinámicamente con JS -->
+    </tbody>
+</table>
+<script>
+
+// -------------------------------------
+// Panel de Clasificación (por ID HTML)
+// -------------------------------------
+
+function initClasificacion() {
+  const tablaBody = document.querySelector("#tabla-links tbody");
+  const filtroForm = document.getElementById("filtro-form");
+  const fechaInicio = document.getElementById("fechaInicio");
+  const fechaFin = document.getElementById("fechaFin");
+
+  filtroForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    cargarLinksClasificacion();
+  });
+
+  async function cargarLinksClasificacion() {
+    tablaBody.innerHTML = "";
+
+    let url = "http://127.0.0.1:8000/api/links/";
+    const params = [];
+
+    if (fechaInicio.value) params.push(`fecha_inicio=${fechaInicio.value}`);
+    if (fechaFin.value) params.push(`fecha_fin=${fechaFin.value}`);
+
+    if (params.length) {
+      url += "?" + params.join("&");
+    }
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    data.forEach((link) => {
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+            <td><a href="${link.url}" target="_blank">${link.url}</a></td>
+            <td>${new Date(link.fecha_carga).toLocaleDateString()}</td>
+            <td>${link.cargado_por}</td>
+            <td>
+                <select class="form-select form-select-sm estado-select" data-id="${
+                  link.id
+                }">
+                    <option value="pendiente" ${
+                      link.estado === "pendiente" ? "selected" : ""
+                    }>Pendiente</option>
+                    <option value="aprobado" ${
+                      link.estado === "aprobado" ? "selected" : ""
+                    }>Aprobado</option>
+                    <option value="descartado" ${
+                      link.estado === "descartado" ? "selected" : ""
+                    }>Descartado</option>
+                </select>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-success actualizar-btn" data-id="${
+                  link.id
+                }">Actualizar</button>
+                <div id="mensaje-${
+                  link.id
+                }" class="text-success small mt-1" style="display:none;">
+                    ✅ Actualizado
+                </div>
+            </td>
+        `;
+
+      tablaBody.appendChild(row);
+    });
+
+    document.querySelectorAll(".actualizar-btn").forEach((button) => {
+      button.addEventListener("click", async function () {
+        const linkId = this.dataset.id;
+        const select = document.querySelector(
+          `select.estado-select[data-id="${linkId}"]`
+        );
+        const nuevoEstado = select.value;
+
+        console.log("Presionaste el botón para link ID:", linkId);
+
+        const response = await fetch(
+          `http://127.0.0.1:8000/api/links/${linkId}/`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: JSON.stringify({ estado: nuevoEstado }),
+          }
+        );
+
+        const respuestaTexto = await response.text();
+        console.log("Respuesta:", response.status, respuestaTexto);
+
+        if (response.ok) {
+          const msg = document.getElementById(`mensaje-${linkId}`);
+          msg.style.display = "block";
+          msg.textContent = "✅ Actualizado";
+
+          setTimeout(() => {
+            msg.style.display = "none";
+          }, 2000);
+        } else {
+          alert("❌ Error al actualizar el estado:\n" + respuestaTexto);
+        }
+      });
+    });
+  }
+
+  cargarLinksClasificacion();
+}
+
+// -------------------------------------
+// Inicialización según vista
+// -------------------------------------
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("filtro-form")) {
+    initClasificacion();
+  }
+
+  // Si ya tenés otros módulos, podés hacer initPrensa(), etc.
+});
+
+</script>
+
+{% endblock %}
